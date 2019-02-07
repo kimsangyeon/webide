@@ -1,32 +1,58 @@
 var socket;
+var namespace = '/ide-pyo';
+var samplePythonCode = "import time\n\nprint('test - {} - god - {}'.format('!!', str(2**5)))\ntime.sleep(1)\nprint('wait 1second')\ntime.sleep(2)\nprint('wait 2second')\nprint('aba')";
+var sampleShellCode = "#!/bin/bash\n\nRAW_TIMESTAMP=$(date +\"%Y-%m-%d %H\")\nRAW_TIMESTAMP=$(date -d \"$RAW_TIMESTAMP\" +%s)\n\necho \"time : $RAW_TIMESTAMP\"\nsleep 1\necho \"done\""
 $(document).ready(function(){
-    var namespace = '/ide-py';
+    initTypeSelectButton();
+    initSocket();
+});
+
+function initTypeSelectButton(){
+    $('#code-area').val(samplePythonCode);
+    $('.type-select_button').on('click', function(){
+        $('.type-select_button').removeClass('active');
+        $(this).addClass('active');
+        var codeType = this.dataset.codeType;
+        $('#code-type').val(codeType);
+        if(codeType == 'shell'){
+            $('#code-area').val(sampleShellCode);
+        }
+        console.log($('#code-type').val());
+    })
+}
+
+function initSocket(){
     socket = io(namespace)
     socket.on('connect', function() {
         socket.emit('handshake', {data: 'hello'});
     });
     socket.on('join_result', function(data) {
-        socket.emit('get_result', {'rid': data.rid, 'file_path': data.file_path})
+        var codeType = $('#code-type').val();
+        socket.emit('get_result', {'rid': data.rid, 'file_path': data.file_path, 'code_type': codeType})
     });
     socket.on('get_result', function(data) {
-        $('#python-result-area').val($('#python-result-area').val() + data.line)
+        $('#result-area').val($('#result-area').val() + data.line)
     });
-});
+}
 
-function runPythonCode(){
+function runCode(){
     var formData = new FormData();
-    var pythonCode = $('#python-code-area').val();
-    console.log(pythonCode)
-    formData.append('pythonCode', pythonCode);
+    var codeType = $('#code-type').val();
+    var codeText = $('#code-area').val();
+    formData.append('codeType', codeType);
+    formData.append('codeText', codeText);
+
+    console.log(codeType);
+    console.log(codeText);
 
     $.ajax({
-        url : '/runPythonCode',
+        url : '/runCode',
         type : 'POST',
         data : formData,
-        processData: false,  // tell jQuery not to process the data
-        contentType: false,  // tell jQuery not to set contentType
+        processData: false,
+        contentType: false,
         success : function(data) {
-            $('#python-result-area').val('');
+            $('#result-area').val('');
             socket.emit('join_result', {'rid': '111', 'file_path': data.file_path})
         },
         error : function(data) {

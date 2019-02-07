@@ -9,18 +9,19 @@ def _get_data_directory():
     return os.path.join(cur_path, data_dir)
 
 
-def _gen_file_name():
+def _gen_file_name(code_type):
     now_time = time.localtime()
     random_name = str(uuid.uuid4()).split('-')[4]
-    temp_file_name = '{}-{}-{}_{}.py'.format(now_time.tm_year, now_time.tm_mon, now_time.tm_mday, random_name)
+    temp_file_name = '{}-{}-{}_{}.{}'.format(
+        now_time.tm_year, now_time.tm_mon, now_time.tm_mday, random_name, code_type.value)
     return temp_file_name
 
 
-def write_file(data):
+def write_file(code_type, code_text):
     dir_path = _get_data_directory()
-    file_name = _gen_file_name()
+    file_name = _gen_file_name(code_type)
     full_path = os.path.join(dir_path, file_name)
     f = open(full_path, 'w')
-    f.write(data)
+    f.write(code_text)
     f.close()
     return full_path
